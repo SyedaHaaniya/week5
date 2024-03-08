@@ -1,0 +1,84 @@
+# Constants defining parking rates and rules
+parking_rates = {
+    "Sunday": {"arrival_time": (8, 16), "max_stay": 8, "price_per_hour": (2.00, 2.00)},
+    "Monday": {"arrival_time": (8, 16), "max_stay": 2, "price_per_hour": (10.00, 2.00)},
+    "Tuesday": {"arrival_time": (8, 16), "max_stay": 2, "price_per_hour": (10.00, 2.00)},
+    "Wednesday": {"arrival_time": (8, 16), "max_stay": 2, "price_per_hour": (10.00, 2.00)},
+    "Thursday": {"arrival_time": (8, 16), "max_stay": 2, "price_per_hour": (10.00, 2.00)},
+    "Friday": {"arrival_time": (8, 16), "max_stay": 2, "price_per_hour": (10.00, 2.00)},
+    "Saturday": {"arrival_time": (8, 16), "max_stay": 4, "price_per_hour": (3.00, 2.00)}
+}
+discount_rates = {"before_16": 0.10, "after_16": 0.50}
+check_digit_factors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1]  # Factors for check digit calculation
+
+# Task 1: Calculate the price to park
+def calculate_parking_price(day, arrival_hour, hours_parked, frequent_parking_number):
+    arrival_hour = int(arrival_hour)
+    hours_parked = int(hours_parked)
+
+    if day not in parking_rates:
+        return "Invalid day"
+
+    rate_info = parking_rates[day]
+    arrival_price = rate_info["price_per_hour"][0] if arrival_hour < 16 else rate_info["price_per_hour"][1]
+    discount_rate = discount_rates["after_16"] if arrival_hour >= 16 else discount_rates["before_16"]
+
+    if frequent_parking_number:
+        if len(frequent_parking_number) != 5:
+            return "Invalid frequent parking number"
+        check_digit = sum(int(digit) * check_digit_factors[i] for i, digit in enumerate(frequent_parking_number[:-1])) % 11
+        if check_digit != int(frequent_parking_number[-1]):
+            discount_rate = 0  # Incorrect check digit, no discount
+
+    total_price = (arrival_price * (1 - discount_rate)) * hours_parked
+    return total_price
+
+# Task 2: Keep a total of payments
+daily_total_payments = 0
+
+def add_payment(payment):
+    global daily_total_payments
+    daily_total_payments += payment
+
+# Task 3: Make payments fairer
+def calculate_parking_price_fairer(day, arrival_hour, hours_parked, frequent_parking_number):
+    arrival_hour = int(arrival_hour)
+    hours_parked = int(hours_parked)
+
+    if day not in parking_rates:
+        return "Invalid day"
+
+    rate_info = parking_rates[day]
+    arrival_price = rate_info["price_per_hour"][0] if arrival_hour < 16 else rate_info["price_per_hour"][1]
+    discount_rate = discount_rates["after_16"] if arrival_hour >= 16 else discount_rates["before_16"]
+
+    if arrival_hour < 16:
+        total_price = arrival_price * hours_parked
+    else:
+        price_before_16 = rate_info["price_per_hour"][0] * min(rate_info["max_stay"], hours_parked)
+        price_after_16 = rate_info["price_per_hour"][1] * max(0, hours_parked - rate_info["max_stay"])
+        total_price = price_before_16 + price_after_16
+
+    if frequent_parking_number:
+        if len(frequent_parking_number) != 5:
+            return "Invalid frequent parking number"
+        check_digit = sum(int(digit) * check_digit_factors[i] for i, digit in enumerate(frequent_parking_number[:-1])) % 11
+        if check_digit != int(frequent_parking_number[-1]):
+            discount_rate = 0  # Incorrect check digit, no discount
+
+    total_price *= (1 - discount_rate)
+    return total_price
+
+# Testing Task 1
+print("Task 1:")
+print("Price to park (no discount):", calculate_parking_price("Sunday", 10, 2, None))  # Expected: 4.00
+print("Price to park (with discount):", calculate_parking_price("Sunday", 18, 2, "12345"))  # Expected: 2.00
+
+# Testing Task 2
+print("\nTask 2:")
+add_payment(5.00)
+print("Daily total payments:", daily_total_payments)  # Expected: 5.00
+
+# Testing Task 3
+print("\nTask 3:")
+print("Price to park (fairer calculation):", calculate_parking_price_fairer("Sunday", 14, 5, None))  # Expected: 6.00
